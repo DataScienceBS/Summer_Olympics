@@ -9,7 +9,6 @@ min_date <- min(df$Year)
 max_date <- max(df$Year)
 
 
-
 # Define UI for application that draws a histogram
 ui <- fluidPage(
    
