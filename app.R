@@ -2,6 +2,7 @@ library(shiny)
 library(dplyr)
 library(ggplot2)
 library(plotly)
+library(DT)
 
 df <- readRDS("olympics.RDS")
 
@@ -18,14 +19,23 @@ ui <- fluidPage(
    # Sidebar with a slider input for number of bins 
    sidebarLayout(
       sidebarPanel(
-        selectInput(inputId = "sport", 
-                     label = "Select the Sport to see the medal count by year for each discipline ", 
-                     choices = sort(c(df$Sport,"ALL")),
-                     selected = "ALL", 
-                     multiple = FALSE,
-                     width = NULL, 
-                     size = NULL),  
+        # selectInput(inputId = "country", 
+        #              label = "Country: ", 
+        #              choices = sort(c(df$Country,"-ALL-")),
+        #              selected = "-ALL-", 
+        #              multiple = FALSE,
+        #              width = NULL, 
+        #              size = NULL),  
   
+        selectInput(inputId = "sport", 
+                    label = "Sport: ", 
+                    choices = sort(c(df$Sport,"-ALL-")),
+                    selected = "-ALL-", 
+                    multiple = FALSE,
+                    width = NULL, 
+                    size = NULL),  
+
+        
         sliderInput("year",
                     "Drill down to a specific range of years for a better visual: ",
                     min = min_date,
@@ -38,7 +48,7 @@ ui <- fluidPage(
 ### because of data complexity, we will not show all disciplines across all sports ###
 
         conditionalPanel(
-          condition = "input.sport != 'ALL'",
+          condition = "input.sport != '-ALL-'",
           radioButtons(inputId = "gender_or_dis", 
                     label = "Stack by Sport Discipline or by Gender: ", 
                     choices = c("Discipline","Gender"),
@@ -49,9 +59,11 @@ ui <- fluidPage(
       
       # Show a plot of the selected inputs
       mainPanel(
-        textOutput("text"),
-        plotOutput("medalPlot")
-         
+        tabsetPanel(
+          tabPanel("Plot", textOutput("text"), plotOutput("medalPlot")),
+#          tabPanel("Table", tableOutput("table"))
+          tabPanel("Table",   DT::dataTableOutput("Table"))
+        )
       )
    )
 )
@@ -60,62 +72,43 @@ ui <- fluidPage(
 server <- function(input, output) {
    
    output$medalPlot <- renderPlot({
-      # generate bins based on input$sport and input$year from ui.R
+
+      # store inputs for future use, passed from from ui.R
       x <- input$sport
       y1 <- input$year[1]
       y2 <- input$year[2]
 
+#---- Error Handling for missing Olympic data 1940 and 1944 ----#
       output$text <- renderText({
           if (y1 >= 1940 & y2 <= 1944) {
             print(paste0("You selected years ", y1, " and ", y2,".  Due to World War II, no Olympic games were held during this period."))}
         })
 
-      
-        
-#################################      
-#  code is working - backup 1   #
-#################################     
-      # bar chart shown with medal counts by discipline of the selected sport, by year
-      # df %>%
-      #   filter(Sport == x) %>%
-      #   filter(Year >= y1 & Year <= y2) %>% 
-      #   select(Country, Discipline, Medal, Year) %>%
-      #   group_by(Country, Discipline, Year, Medal) %>%
-      #   tally %>%
-      #   mutate('Medal Count' = n) %>%
-      #   ggplot(., aes(x = Year, color = Discipline)) +
-      #   geom_bar() +
-      #   ylab('Medal Count')
-###################      
 
-    
-##################################      
-#  code below is working - KEEP  #  
-##################################     
-      if (x == "ALL") {
+#-------- handling plot for sports ---------#
+##-------- IF to handle ALL or One  -------##
+
+      if (x == "-ALL-") {
         df %>% 
           filter(Year >= y1 & Year <= y2) %>%
-          select(Year, Gender, Medal) %>% 
-          group_by(Year, Gender) %>% 
-          ggplot(., aes(x = Year, fill = Gender)) +
-          geom_bar(position = position_stack(reverse = TRUE)) +
-          ylab('Medal Count') 
-        
-        } 
+            select(Year, Gender, Medal) %>% 
+            group_by(Year, Gender) %>% 
+            ggplot(., aes(x = Year, fill = Gender)) +
+            geom_bar(position = position_stack(reverse = TRUE)) +
+            ylab('Medal Count') 
+          } 
       else{
         df %>%
           filter(Sport == x) %>%
           filter(Year >= y1 & Year <= y2) %>%
-          select(Country, Discipline, Gender, Medal, Year) %>%
-          group_by(Country, Discipline, Gender, Year, Medal) %>%
-          tally %>%
-          mutate('Medal Count' = n) %>%
-          ggplot(., aes_string(x = "Year", fill = input$gender_or_dis)) +
-          geom_bar(position = position_stack(reverse = TRUE)) +
-          ylab('Medal Count') 
-        
-        }
-      
+            select(Country, Discipline, Gender, Medal, Year) %>%
+            group_by(Country, Discipline, Gender, Year, Medal) %>%
+            tally %>%
+            mutate('Medal Count' = n) %>%
+            ggplot(., aes_string(x = "Year", fill = input$gender_or_dis)) +
+            geom_bar(position = position_stack(reverse = TRUE)) +
+            ylab('Medal Count') 
+          }
       
 ############## plotly option ----- still in development -----
         # df %>%
@@ -127,11 +120,42 @@ server <- function(input, output) {
         #   plot_ly(x = ~Year, color = ~Discipline, type = "bar")
 ###############
       
-      
-      
    })
-}
+
+   #------- handling table data as second tab -------#
+   
+   output$Table <- DT::renderDataTable({
+     x <- input$sport
+     y1 <- input$year[1]
+     y2 <- input$year[2]
+     
+     
+     if (x == "-ALL-") {
+       df %>% 
+         filter(Year >= y1 & Year <= y2) %>%
+         select(Location, Year, Country, Sport, Discipline, Event, Gender, Athlete, Medal) 
+     } 
+     else{
+       df %>%
+         filter(Sport == x) %>%
+         filter(Year >= y1 & Year <= y2) %>%
+         select(Location, Year, Country, Sport, Discipline, Event, Gender, Athlete, Medal)
+     }
+     })
+   
+   }
 
 # Run the application 
 shinyApp(ui = ui, server = server)
 
+
+#### items to add: 
+# check box for (multiple) medal selection
+# drop down box for country selection (1 or all)
+# olympic rings for logo/icon
+# olympic colors for plots
+# better to consider shiny dashboard? 
+# consider conditional panels, aligning selections side-by-side (medals, gen_or_dis)
+#### 
+
+ 

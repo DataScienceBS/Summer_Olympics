@@ -11,6 +11,7 @@ library(readxl)
 library(dplyr)
 library(ggplot2)
 library(plotly)
+library(DT)
 
 ##------------------ data prep ------------------##
 
@@ -58,3 +59,29 @@ df %>%
   ggplot(., aes(x = Year, color = Gender)) +
   geom_bar(position = position_stack(reverse = TRUE)) +
   ylab('Medal Count')
+
+
+
+####################################################################################
+#     ---     testing table display of sport / country / year filtering    ---     #
+####################################################################################
+
+
+df %>% 
+  select(Year, Gender, Medal) %>% 
+  group_by(Year, Gender) %>% 
+  ggplot(., aes(x = Year, fill = Gender)) +
+  geom_bar(position = position_stack(reverse = TRUE)) +
+  ylab('Medal Count') 
+
+
+
+DTOutput(
+  datatable(df)
+)
+
+datatable(df) %>% 
+  filter(Sport == x) %>%
+  filter(Year >= y1 & Year <= y2) %>%
+  select(Location, Year, Country, Sport, Discipline, Event, Athlete, Gender, Medal)
+
