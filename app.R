@@ -3,6 +3,9 @@ library(dplyr)
 library(ggplot2)
 library(plotly)
 library(DT)
+library(shinythemes)
+library(ggthemes)
+
 
 df <- readRDS("olympics.RDS")
 
@@ -11,22 +14,14 @@ max_date <- max(df$Year)
 
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(
-  
+ui <- fluidPage(theme = shinytheme("flatly"),
+            
  # Application title
    titlePanel("Summer Olympic Medal Data"),
    
    # Sidebar with a slider input for number of bins 
    sidebarLayout(
       sidebarPanel(
-        # selectInput(inputId = "country", 
-        #              label = "Country: ", 
-        #              choices = sort(c(df$Country,"-ALL-")),
-        #              selected = "-ALL-", 
-        #              multiple = FALSE,
-        #              width = NULL, 
-        #              size = NULL),  
-  
         selectInput(inputId = "sport", 
                     label = "Sport: ", 
                     choices = sort(c(df$Sport,"-ALL-")),
@@ -110,8 +105,11 @@ server <- function(input, output) {
           group_by(Year, Gender) %>% 
           ggplot(., aes(x = Year, fill = Gender)) +
           geom_bar(position = position_stack(reverse = TRUE)) +
-          ylab('Medal Count') 
-          } 
+          scale_x_continuous(breaks = seq(y1, y2, by = 4)) +
+          ylab('Medal Count') + 
+          theme_economist() + 
+          scale_fill_economist()
+      } 
       else{
         df %>%
           filter(Sport == x) %>%
@@ -124,7 +122,11 @@ server <- function(input, output) {
             mutate('Medal Count' = n) %>%
             ggplot(., aes_string(x = "Year", fill = input$gender_or_dis)) +
             geom_bar(position = position_stack(reverse = TRUE)) +
-            ylab('Medal Count') 
+            scale_x_continuous(breaks = seq(y1, y2, by = 4)) +
+            ylab('Medal Count') +
+            theme_economist() + 
+            scale_fill_economist()
+        
           }
   }) #end output medal_plot
   
@@ -149,14 +151,14 @@ server <- function(input, output) {
      gender_selected <- input$gender_select
      
      if (x == "-ALL-") {
-       df %>% 
+       test <- df %>% 
          filter(Year >= y1 & Year <= y2) %>%
          filter(Medal %in% medals_selected) %>%
          filter(Gender %in% gender_selected) %>%
-         select(Location, Year, Country, Sport, Discipline, Event, Gender, Athlete, Medal) 
+         select(Location, Year, Country, Sport, Discipline, Event, Gender, Athlete, Medal)
         } 
      else{
-       df %>%
+       test <- df %>%
          filter(Sport == x) %>%
          filter(Year >= y1 & Year <= y2) %>%
          filter(Medal %in% medals_selected) %>% 
@@ -164,8 +166,12 @@ server <- function(input, output) {
          select(Location, Year, Country, Sport, Discipline, Event, Gender, Athlete, Medal)
         }  #end if/else  
 
+     datatable(test) %>% formatStyle("Year", target = "row",
+       backgroundColor = "#c8d6d6")
+     
   })  #end output DataTable
  
+
 } # end_server
 
 # Run the application 

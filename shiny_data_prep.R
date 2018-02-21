@@ -24,7 +24,6 @@ saveRDS(df, "olympics.RDS")
 
 
 ##------------------testing presentation material ------------------##
-## Select Sport, display gold medal by country
 
 medal_sport = df %>% 
   filter(Sport == "Aquatics") %>% 
@@ -84,4 +83,37 @@ datatable(df) %>%
   filter(Sport == x) %>%
   filter(Year >= y1 & Year <= y2) %>%
   select(Location, Year, Country, Sport, Discipline, Event, Athlete, Gender, Medal)
+
+
+##### looking at ISO country codes ######
+library(countrycode)
+library(maps)
+library(mapdata)
+
+ISO_convert <- read_excel('data/ISO_crosswalk.xlsx')
+map_df <- merge(x = df, y = ISO_convert, by.x = "NOC", by.y = "Int Olympic Committee code", all.x = TRUE)
+
+na_countries <- map_df %>% 
+  filter(is.na(Country.y)) %>% 
+  select(NOC, Country.x) %>% 
+  distinct(Country.x)
+
+temp <- data(worldMapEnv)
+
+
+######### TBD #########
+# Australasia = other
+# Bohemia = CZE
+# British West Indies = ???????????
+# Unified team of Germany = DEU
+# West Germany = DEU
+# East Germany = DEU
+# Independent Olympic Participants = other
+# Romania = ROU
+# Czechoslovakia = CZE
+# Soviet Union = RUS
+# Yugoslavia = YUG (source: https://www.iso.org/files/live/sites/isoorg/files/archive/pdf/en/iso_3166-3_newsletter_i-3.pdf)
+# Mixed teams = other
+#######################
+
 
