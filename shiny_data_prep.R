@@ -117,3 +117,55 @@ temp <- data(worldMapEnv)
 #######################
 
 
+#############################################
+#  testing top 10 countries by medal count  #
+#############################################
+
+top10 <- df %>% 
+  group_by(Country, Medal) %>% 
+  count(Country, Medal) %>% 
+  summarise("Medals" = sum(n)) %>%  
+  summarise("Total Medals" = sum("Medals"))
+  arrange(Country, Medal) %>% 
+  head(n=10)
+
+top_plot <- df %>% 
+  filter(Country %in% top10$Country) %>% 
+  group_by(Country, Medal) %>% 
+  count("Medal Count" = n(), sort = TRUE) %>% 
+  select(Country, Medal, "Medal Count") %>% 
+  ggplot(., aes(x = "Medal Count", y = Country)) +
+  geom_bar(fill = Medal)
+
+
+library(ggthemes)
+
+df2 <- df
+df2$Medal = factor(df2$Medal, levels = unique(df2$Medal))
+
+
+plot_countries <-  df %>% 
+#  filter(Sport == x) %>%
+  filter(Sport == 'Aquatics') %>%
+  filter(Year >= 1896 & Year <= 2008) %>%
+#  filter(Year >= y1 & Year <= y2) %>%
+#  filter(Medal %in% medals_selected) %>% 
+#  filter(Gender %in% gender_selected) %>%
+  select(Country, Year, Medal) %>%
+  group_by(Country, Year, Medal) %>%
+  tally() %>%
+  mutate(Medal_Count = n) %>%
+  ungroup() %>% 
+  group_by(Country) %>% 
+  mutate(Total_Medals = sum(n), sort = TRUE) %>%
+  ungroup() %>% 
+  ggplot(., aes(x = reorder(Country, -Total_Medals), y = Medal_Count, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
+  geom_bar(stat = 'identity') +
+  scale_fill_manual("Medals", values = c("#C98910", "#A8A8A8", "#965A38")) +
+  #  scale_fill_manual("Medals", values = c("Gold" = "Gold", "Silver" = "Silver", "Bronze" = "brown")) +
+  ylab('Medal Count') +
+  xlab('Country') +
+  theme_economist() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.95, vjust = 0.2)) 
+#  scale_fill_economist()
+plot_countries
