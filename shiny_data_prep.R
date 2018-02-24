@@ -7,11 +7,14 @@
 #    Testing plots and pipelines before shiny    #
 ##################################################
 
-library(readxl)
+library(shiny)
 library(dplyr)
 library(ggplot2)
 library(plotly)
 library(DT)
+library(shinythemes)
+library(ggthemes)
+
 
 ##------------------ data prep ------------------##
 
@@ -20,7 +23,7 @@ country_cross <- read_excel("data/country_cross.xlsx")
 
 df <- merge(x = winners, y = country_cross, by = "NOC", all.x = TRUE)
 
-saveRDS(df, "olympics.RDS")
+saveRDS(df, "Summer_Olympics/olympics.RDS")
 
 
 ##------------------testing presentation material ------------------##
@@ -140,32 +143,21 @@ top_plot <- df %>%
 
 library(ggthemes)
 
-df2 <- df
-df2$Medal = factor(df2$Medal, levels = unique(df2$Medal))
-
-
-plot_countries <-  df %>% 
-#  filter(Sport == x) %>%
-  filter(Sport == 'Aquatics') %>%
-  filter(Year >= 1896 & Year <= 2008) %>%
-#  filter(Year >= y1 & Year <= y2) %>%
-#  filter(Medal %in% medals_selected) %>% 
-#  filter(Gender %in% gender_selected) %>%
-  select(Country, Year, Medal) %>%
-  group_by(Country, Year, Medal) %>%
-  tally() %>%
-  mutate(Medal_Count = n) %>%
+test <- df %>% 
+  filter(Sport == "Gymnastics") %>%
+  filter(Year >= 2008 & Year <= 2008) %>%
+  filter(Medal == "Bronze") %>% 
+  filter(Gender == "Women") %>%
+  select(Year, Country, Sport, Discipline, Event, Medal) %>%
+#  aggregate(.,by = list(Year, Country, Sport, Discipline, Event, Medal))
+  group_by(Year, Country, Sport, Discipline, Event, Medal) %>%
+  distinct() %>% 
+#  count(Year, Country, Sport, Discipline, Event, Medal, sort = TRUE) %>%
+  mutate(Medal_Count = n()) %>% 
   ungroup() %>% 
   group_by(Country) %>% 
-  mutate(Total_Medals = sum(n), sort = TRUE) %>%
-  ungroup() %>% 
-  ggplot(., aes(x = reorder(Country, -Total_Medals), y = Medal_Count, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
-  geom_bar(stat = 'identity') +
-  scale_fill_manual("Medals", values = c("#C98910", "#A8A8A8", "#965A38")) +
-  #  scale_fill_manual("Medals", values = c("Gold" = "Gold", "Silver" = "Silver", "Bronze" = "brown")) +
-  ylab('Medal Count') +
-  xlab('Country') +
-  theme_economist() + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 0.95, vjust = 0.2)) 
-#  scale_fill_economist()
-plot_countries
+  mutate(Total_Medals = sum(n)) %>%
+  ungroup() 
+  
+
+View(test)

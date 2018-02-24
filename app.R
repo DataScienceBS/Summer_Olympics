@@ -119,8 +119,8 @@ server <- function(input, output) {
         filter(Year >= y1 & Year <= y2) %>%
         filter(Medal %in% medals_selected) %>% 
         filter(Gender %in% gender_selected) %>%
-        select(Year, Gender, Medal) %>% 
-        group_by(Year, Gender) %>% 
+        select(Year, Discipline, Event, Gender, Medal) %>% 
+        group_by(Year, Discipline, Event, Gender, Medal) %>% 
         ggplot(., aes(x = as.factor(Year), fill = Gender)) +
         geom_bar(position = position_stack(reverse = TRUE)) +
         ylab('Medal Count') + 
@@ -135,8 +135,8 @@ server <- function(input, output) {
         filter(Year >= y1 & Year <= y2) %>%
         filter(Medal %in% medals_selected) %>% 
         filter(Gender %in% gender_selected) %>%
-        select(Country, Discipline, Gender, Medal, Year) %>%
-        group_by(Country, Discipline, Gender, Year, Medal) %>%
+        select(Year, Discipline, Event, Gender, Medal) %>%
+        group_by(Year, Discipline, Event, Gender, Medal) %>%
         tally %>%
         mutate('Medal Count' = n) %>%
         ggplot(., aes(x = as.factor(Year))) +
@@ -209,12 +209,18 @@ server <- function(input, output) {
         filter(Year >= y1 & Year <= y2) %>%
         filter(Medal %in% medals_selected) %>% 
         filter(Gender %in% gender_selected) %>%
-        select(Country, Year, Medal) %>%
-        group_by(Country, Year, Medal) %>%
-        tally() %>%
+#        select(Country, Year, Medal) %>%
+#
+        select(Country, Discipline, Event, Gender, Medal, Year) %>%
+        group_by(Country, Discipline, Event, Gender, Year, Medal) %>%
+        tally %>%
         mutate(Medal_Count = n) %>%
+#        
+#        group_by(Country, Year, Medal) %>%
+#        tally() %>%
+#        mutate(Medal_Count = n) %>%
         ungroup() %>% 
-        group_by(Country) %>% 
+        group_by(Year, Country, Discipline, Event, Gender) %>% 
         mutate(Total_Medals = sum(n), sort = TRUE) %>%
         ungroup() %>% 
         ggplot(., aes(x = reorder(Country, -Total_Medals), y = Medal_Count, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
@@ -231,12 +237,18 @@ server <- function(input, output) {
         filter(Year >= y1 & Year <= y2) %>%
         filter(Medal %in% medals_selected) %>% 
         filter(Gender %in% gender_selected) %>%
-        select(Country, Year, Medal) %>%
-        group_by(Country, Year, Medal) %>%
-        tally() %>%
+#        
+        select(Country, Discipline, Event, Gender, Medal, Year) %>%
+        group_by(Country, Discipline, Event, Gender, Year, Medal) %>%
+        tally %>%
         mutate(Medal_Count = n) %>%
+#        
+#        select(Country, Year, Medal) %>%
+#        group_by(Country, Year, Medal) %>%
+#        tally() %>%
+#        mutate(Medal_Count = n) %>%
         ungroup() %>% 
-        group_by(Country) %>% 
+        group_by(Year, Country, Discipline, Event, Gender) %>% 
         mutate(Total_Medals = sum(n), sort = TRUE) %>%
         ungroup() %>% 
         ggplot(., aes(x = reorder(Country, -Total_Medals), y = Medal_Count, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
