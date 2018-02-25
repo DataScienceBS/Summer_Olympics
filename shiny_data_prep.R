@@ -158,6 +158,74 @@ test <- df %>%
   group_by(Country) %>% 
   mutate(Total_Medals = sum(n)) %>%
   ungroup() 
-  
+
+
+test <- df %>% 
+  filter(Year >= 2008 & Year <= 2008) %>%
+  filter(Medal == "Bronze") %>% 
+  #filter(Gender == "Women") %>%
+  select(Year, Country, Sport, Discipline, Event, Medal) %>%
+  group_by(Year, Country, Sport, Discipline, Event, Medal) %>%
+  distinct() %>%
+  tally() %>% 
+  mutate(Medal_Count = n()) 
+
+test2 <- test %>% 
+  group_by(Year, Country, Medal, Medal_Count) %>% 
+  #distinct() %>% 
+  #tally() %>% 
+  summarize(Total_Medals = sum(Medal_Count))
+
+##########test3 <- cbind(test$Year, test$Country, test$Medal, test$Medal_Count, test2$Total_Medals)
+
+ggplot(test, aes(x = Country, y = Medal_Count, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
+  geom_bar(stat = 'identity') +
+  #--- assigning specific color based on the Medal label ---#
+  scale_fill_manual(name = "Medals", 
+                    values = c("Gold" = "#C98910", 
+                               "Silver" = "#A8A8A8", 
+                               "Bronze" = "#965A38")) +
+  ylab('Medal Count') +
+  xlab('Country') +
+  theme_economist() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.95, vjust = 0.2)) 
+
+
+View(test)
+
+
+test <- df %>% 
+  filter(Year >= 2008 & Year <= 2008) %>%
+  filter(Country == "United States") %>% 
+  select(Year, Country, Sport, Discipline, Event, Event_gender, Medal) %>%
+  ###################################################################################
+#- calculating Medal Count by metal to display medals stacked for each country
+#-- since the data has athlete level detail, I use Group By and Distinct to 
+#--- count medals for a Sport -> Discipline -> Event -> Medal level to avoid 
+#---- counting each athlete within a team event. (e.g. hockey, 4x100m relay)
+###################################################################################         
+group_by(Year, Country, Sport, Discipline, Event, Medal) %>%
+  distinct() %>%
+  tally() %>%
+  ungroup() %>%
+  group_by(Country) %>%
+  mutate(Total_Medals = sum(n), sort = TRUE) %>%
+  ungroup() %>%
+  arrange(.,Total_Medals)
+
+
+
+  # ungroup() %>%
+View(test)
+ggplot(test, aes(x = reorder(Country, -Total_Medals), y = n, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
+  geom_bar(stat = 'identity') +
+  scale_fill_manual(name = "Medals",
+                    values = c("Gold" = "#C98910",
+                               "Silver" = "#A8A8A8",
+                               "Bronze" = "#965A38")) +
+  ylab('Medal Count') +
+  xlab('Country') +
+  theme_economist() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.95, vjust = 0.2))
 
 View(test)

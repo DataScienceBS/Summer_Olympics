@@ -118,14 +118,19 @@ server <- function(input, output) {
     
     #-------- handling plot for sports ---------#
     ##-------- IF to handle ALL or One  -------##
-    
-    if (x == "-ALL-") {
+    df <- if(x != "-ALL-"){
+      df %>% filter(Sport == x)
+      } else{df}
+
+#    if (x == "-ALL-") { # no longer needed with new pre-plot filtering
       df %>% 
         filter(Year >= y1 & Year <= y2) %>%
         filter(Medal %in% medals_selected) %>% 
         filter(Gender %in% gender_selected) %>%
-        select(Year, Gender, Medal) %>% 
-        group_by(Year, Gender) %>% 
+        select(Year, Country, Discipline, Event, Gender, Medal) %>% 
+        group_by(Year, Country, Discipline, Event, Gender, Medal) %>%
+        distinct() %>%
+        tally() %>% 
         ggplot(., aes(x = as.factor(Year), fill = Gender)) +
         geom_bar(position = position_stack(reverse = TRUE)) +
         ylab('Medal Count') + 
@@ -133,37 +138,37 @@ server <- function(input, output) {
         theme_economist() + 
         theme(axis.text.x = element_text(angle = 45, hjust = 0)) +
         scale_fill_economist()
-    } 
-    else{
-      df %>%
-        filter(Sport == x) %>%
-        filter(Year >= y1 & Year <= y2) %>%
-        filter(Medal %in% medals_selected) %>% 
-        filter(Gender %in% gender_selected) %>%
-        select(Country, Discipline, Gender, Medal, Year) %>%
-        group_by(Country, Discipline, Gender, Year, Medal) %>%
-        tally %>%
-        mutate('Medal Count' = n) %>%
-        ggplot(., aes(x = as.factor(Year))) +
-        geom_bar(aes_string(fill = input$gender_or_dis),position = position_stack(reverse = TRUE)) +
-        ylab('Medal Count') +
-        xlab('Year') +
-        theme_economist() + 
-        theme(axis.text.x = element_text(angle = 45, hjust = 0)) +
-        scale_fill_economist()
-    }
+      
+############################################
+# the code block below was removed
+# after applying pre-process filtering
+# that rendered this version of if-else 
+# useless, making the code cleaner. 
+# leaving in case I need to revert back
+############################################
+    # } 
+    # else{
+    #   df %>%
+    #     filter(Sport == x) %>%
+    #     filter(Year >= y1 & Year <= y2) %>%
+    #     filter(Medal %in% medals_selected) %>% 
+    #     filter(Gender %in% gender_selected) %>%
+    #     select(Country, Discipline, Event, Gender, Medal, Year) %>%
+    #     group_by(Year, Country, Discipline, Event, Gender, Medal) %>%
+    #     distinct() %>%
+    #     tally %>%
+    #     mutate('Medal Count' = n) %>%
+    #     ggplot(., aes(x = as.factor(Year))) +
+    #     geom_bar(aes_string(fill = input$gender_or_dis),position = position_stack(reverse = TRUE)) +
+    #     ylab('Medal Count') +
+    #     xlab('Year') +
+    #     theme_economist() + 
+    #     theme(axis.text.x = element_text(angle = 45, hjust = 0)) +
+    #     scale_fill_economist()
+    # }
+########################################################################################
   }) #end output medal_plot
-  
-  ############## plotly option ----- still in development -----
-  # df %>%
-  #   filter(Sport == x) %>%
-  #   select(Country, Discipline, Medal, Year) %>%
-  #   group_by(Country, Discipline, Year, Medal) %>%
-  #   tally %>%
-  #   mutate('Medal Count' = n) %>%
-  #   plot_ly(x = ~Year, color = ~Discipline, type = "bar")
-  ###############
-  
+
   
   #------- handling table data as second tab -------#
   
@@ -174,22 +179,32 @@ server <- function(input, output) {
     medals_selected <- input$medal_select
     gender_selected <- input$gender_select
     
-    if (x == "-ALL-") {
+#-- pre-plot filtering to keep code clean --#
+    df <- if(x != "-ALL-"){
+      df %>% filter(Sport == x)
+    } else{df}
+    
+    
+#    if (x == "-ALL-") {  # remove if pre-table filtering works #
       tbl1 <- df %>% 
         filter(Year >= y1 & Year <= y2) %>%
         filter(Medal %in% medals_selected) %>%
         filter(Gender %in% gender_selected) %>%
         select(Location, Year, Country, Sport, Discipline, Event, Gender, Athlete, Medal)
-    } 
-    else{
-      tbl1 <- df %>%
-        filter(Sport == x) %>%
-        filter(Year >= y1 & Year <= y2) %>%
-        filter(Medal %in% medals_selected) %>% 
-        filter(Gender %in% gender_selected) %>%
-        select(Location, Year, Country, Sport, Discipline, Athlete, Gender, Medal, Event)
-    }  #end if/else  
-    
+####################################
+# remove if pre-table filter works
+####################################
+    # } 
+    # else{
+    #   tbl1 <- df %>%
+    #     filter(Sport == x) %>%
+    #     filter(Year >= y1 & Year <= y2) %>%
+    #     filter(Medal %in% medals_selected) %>% 
+    #     filter(Gender %in% gender_selected) %>%
+    #     select(Location, Year, Country, Sport, Discipline, Athlete, Gender, Medal, Event)
+    #}  #end if/else  
+####################################    
+
     datatable(tbl1) %>% formatStyle("Year", target = "row",
                                     backgroundColor = "#3E647D"
                                     ,class = 'compact'
@@ -207,69 +222,78 @@ server <- function(input, output) {
     y2 <- input$year[2]
     medals_selected <- input$medal_select
     gender_selected <- input$gender_select
+
+    #-- pre-plot filtering to keep code clean --#
+    df <- if(x != "-ALL-"){
+      df %>% filter(Sport == x)
+    } else{df}
     
-    if (x == "-ALL-") {
+
+#    if (x == "-ALL-") { ### remove if pre-plot filtering works
       df %>% 
         filter(Year >= y1 & Year <= y2) %>%
         filter(Medal %in% medals_selected) %>% 
         filter(Gender %in% gender_selected) %>%
         select(Year, Country, Sport, Discipline, Event, Medal) %>%
-        ###################################################################################
-      #- calculating Medal Count by metal to display medals stacked for each country
-      #-- since the data has athlete level detail, I use Group By and Distinct to 
-      #--- count medals for a Sport -> Discipline -> Event -> Medal level to avoid 
-      #---- counting each athlete within a team event. (e.g. hockey, 4x100m relay)
-      ###################################################################################         
-      group_by(Year, Country, Sport, Discipline, Event, Medal) %>%
-        distinct() %>%
-        tally() %>% 
-        mutate(Medal_Count = n()) %>%
-        ungroup() %>% 
-        #--- calculating Total Medal Count by country to sort bar graph by most medals ---#
-        group_by(Country) %>% 
-        mutate(Total_Medals = sum(n), sort = TRUE) %>%
-        ungroup() %>% 
-        #--- Start bar plot, fill stacked by medal type for each country, ordered by total medals won ---#
-        ggplot(., aes(x = reorder(Country, -Total_Medals), y = Medal_Count, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
-        geom_bar(stat = 'identity') +
-        #--- assigning specific color based on the Medal label ---#
-        scale_fill_manual(name = "Medals", 
-                          values = c("Gold" = "#C98910", 
-                                     "Silver" = "#A8A8A8", 
-                                     "Bronze" = "#965A38")) +
-        ylab('Medal Count') +
-        xlab('Country') +
-        theme_economist() + 
-        theme(axis.text.x = element_text(angle = 90, hjust = 0.95, vjust = 0.2)) 
-    }
-    else{     
-      df %>% 
-        filter(Sport == x) %>%
-        filter(Year >= y1 & Year <= y2) %>%
-        filter(Medal %in% medals_selected) %>% 
-        filter(Gender %in% gender_selected) %>%
-        select(Year, Country, Sport, Discipline, Event, Medal) %>%
-        #--- calculating Medal Count by metal to display medals stacked for each country ---#
+###################################################################################
+#- calculating Medal Count by metal to display medals stacked for each country
+#-- since the data has athlete level detail, I use Group By and Distinct to 
+#--- count medals for a Sport -> Discipline -> Event -> Medal level to avoid 
+#---- counting each athlete within a team event. (e.g. hockey, 4x100m relay)
+###################################################################################         
         group_by(Year, Country, Sport, Discipline, Event, Medal) %>%
         distinct() %>%
-        tally() %>% 
-        mutate(Medal_Count = n()) %>%
-        ungroup() %>% 
-        group_by(Country) %>% 
+        tally() %>%
+        ungroup() %>%
+        group_by(Country) %>%
         mutate(Total_Medals = sum(n), sort = TRUE) %>%
-        ungroup() %>% 
-        ggplot(., aes(x = reorder(Country, -Total_Medals), y = Medal_Count, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
+        ungroup() %>%
+        arrange(.,Total_Medals) %>% 
+        ggplot(., aes(x = reorder(Country, -Total_Medals), y = n, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
         geom_bar(stat = 'identity') +
-        scale_fill_manual(name = "Medals", 
-                          values = c("Gold" = "#C98910", 
-                                     "Silver" = "#A8A8A8", 
+        scale_fill_manual(name = "Medals",
+                          values = c("Gold" = "#C98910",
+                                     "Silver" = "#A8A8A8",
                                      "Bronze" = "#965A38")) +
         ylab('Medal Count') +
         xlab('Country') +
-        theme_economist() + 
-        theme(axis.text.x = element_text(angle = 90, hjust = 0.95, vjust = 0.2)) 
-    }
+        theme_economist() +
+        theme(axis.text.x = element_text(angle = 90, hjust = 0.95, vjust = 0.2))
     
+      
+################################################
+#  -- remove if pre-plot filtering works -- 
+################################################
+    # }
+    # else{     
+    #   df %>% 
+    #     filter(Sport == x) %>%
+    #     filter(Year >= y1 & Year <= y2) %>%
+    #     filter(Medal %in% medals_selected) %>% 
+    #     filter(Gender %in% gender_selected) %>%
+    #     select(Year, Country, Sport, Discipline, Event, Medal) %>%
+    #     #--- calculating Medal Count by metal to display medals stacked for each country ---#
+    #     group_by(Year, Country, Sport, Discipline, Event, Medal) %>%
+    #     distinct() %>%
+    #     tally() %>% 
+    #     mutate(Medal_Count = n()) %>%
+    #     ungroup() %>% 
+    #     group_by(Country) %>% 
+    #     mutate(Total_Medals = sum(n), sort = TRUE) %>%
+    #     ungroup() %>% 
+    #     ggplot(., aes(x = reorder(Country, -Total_Medals), y = Medal_Count, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
+    #     geom_bar(stat = 'identity') +
+    #     scale_fill_manual(name = "Medals", 
+    #                       values = c("Gold" = "#C98910", 
+    #                                  "Silver" = "#A8A8A8", 
+    #                                  "Bronze" = "#965A38")) +
+    #     ylab('Medal Count') +
+    #     xlab('Country') +
+    #     theme_economist() + 
+    #     theme(axis.text.x = element_text(angle = 90, hjust = 0.95, vjust = 0.2)) 
+    # }
+################################################################################################      
+          
   }) #-end country plot
   
   output$medalStatus <- renderText({
