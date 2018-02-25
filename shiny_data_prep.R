@@ -196,15 +196,15 @@ View(test)
 
 test <- df %>% 
   filter(Year >= 2008 & Year <= 2008) %>%
-  filter(Country == "United States") %>% 
-  select(Year, Country, Sport, Discipline, Event, Event_gender, Medal) %>%
+  #filter(Country == "United States") %>% 
+  select(Year, Country, Sport, Discipline, Event, Gender, Medal) %>%
   ###################################################################################
 #- calculating Medal Count by metal to display medals stacked for each country
 #-- since the data has athlete level detail, I use Group By and Distinct to 
 #--- count medals for a Sport -> Discipline -> Event -> Medal level to avoid 
 #---- counting each athlete within a team event. (e.g. hockey, 4x100m relay)
 ###################################################################################         
-group_by(Year, Country, Sport, Discipline, Event, Medal) %>%
+group_by(Year, Country, Sport, Discipline, Event, Gender, Medal) %>%
   distinct() %>%
   tally() %>%
   ungroup() %>%
@@ -214,10 +214,21 @@ group_by(Year, Country, Sport, Discipline, Event, Medal) %>%
   arrange(.,Total_Medals)
 
 
+topX <- 15
+
+test_topX <- test %>% 
+  select(Country, Total_Medals) %>% 
+  distinct() %>% 
+  arrange(desc(Total_Medals)) %>% 
+  select(Country) %>% 
+  head(n=topX)        
+
+test2 <- test %>% 
+  filter(Country %in% unlist(test_topX))
 
   # ungroup() %>%
 View(test)
-ggplot(test, aes(x = reorder(Country, -Total_Medals), y = n, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
+ggplot(test2, aes(x = reorder(Country, -Total_Medals), y = n, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
   geom_bar(stat = 'identity') +
   scale_fill_manual(name = "Medals",
                     values = c("Gold" = "#C98910",
@@ -227,5 +238,8 @@ ggplot(test, aes(x = reorder(Country, -Total_Medals), y = n, fill = factor(Medal
   xlab('Country') +
   theme_economist() +
   theme(axis.text.x = element_text(angle = 90, hjust = 0.95, vjust = 0.2))
+
+
+
 
 View(test)
