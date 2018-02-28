@@ -14,10 +14,10 @@ max_date <- max(df$Year)
 
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(theme = shinytheme("slate"),
-                #ui <- fluidPage(theme = shinytheme("flatly"),
-                #ui <- fluidPage(theme = shinytheme("superhero"),
-                #ui <- fluidPage(theme = shinytheme("yeti"),
+#ui <- fluidPage(theme = shinytheme("slate"),
+#ui <- fluidPage(theme = shinytheme("flatly"),
+ui <- fluidPage(theme = shinytheme("superhero"),
+#ui <- fluidPage(
                 
                 # Application title
                 titlePanel("Summer Olympic Medal Data"),
@@ -72,7 +72,7 @@ ui <- fluidPage(theme = shinytheme("slate"),
                   mainPanel(
                     tabsetPanel(
                       tabPanel("Medals by Sport", textOutput("text"), plotOutput("medalPlot")),
-                      tabPanel("Table",   DT::dataTableOutput("Table")),
+                      tabPanel("Table",   DT::DTOutput("Table")),
                       tabPanel("Medals by Country", 
                                fluidRow(
                                  column(4),
@@ -95,11 +95,7 @@ ui <- fluidPage(theme = shinytheme("slate"),
 ###########################################
 
 server <- function(input, output) {
-  
-  topX <- reactive({
-    req(input$topX)
-    input$topX
-  })
+
   
   output$medalPlot <- renderPlot({
     
@@ -109,7 +105,6 @@ server <- function(input, output) {
     y2 <- input$year[2]
     medals_selected <- input$medal_select
     gender_selected <- input$gender_select
-    
     
     #---- Error Handling for missing Olympic data in 1916, 1940 and 1944 ----#
     output$text <- renderText({
@@ -135,8 +130,8 @@ server <- function(input, output) {
       group_by(Year, Country, Discipline, Event, Gender, Medal) %>%
       distinct() %>%
       tally() %>% 
-      ggplot(., aes(x = as.factor(Year), fill = Gender)) +
-      geom_bar(position = position_stack(reverse = TRUE)) +
+      ggplot(., aes(x = as.factor(Year))) +
+      geom_bar(aes_string(fill = input$gender_or_dis),position = position_stack(reverse = TRUE)) +
       ylab('Medal Count') + 
       xlab('Year') +
       theme_economist() + 
@@ -147,7 +142,7 @@ server <- function(input, output) {
   
   #------- handling table data as second tab -------#
   
-  output$Table <- DT::renderDataTable({
+  output$Table <- DT::renderDT({
     x <- input$sport
     y1 <- input$year[1]
     y2 <- input$year[2]
@@ -164,12 +159,21 @@ server <- function(input, output) {
       filter(Medal %in% medals_selected) %>%
       filter(Gender %in% gender_selected) %>%
       select(Location, Year, Country, Sport, Discipline, Event, Gender, Athlete, Medal)
-    
-    datatable(tbl1) %>% formatStyle("Year", target = "row",
-                                    backgroundColor = "#3E647D"
-                                    ,class = 'compact'
-    )     
-  })  #end output DataTable
+
+#----- creating and formatting the data table ----#    
+    datatable(tbl1,
+              extensions = c('ColReorder', 'Buttons'), 
+                            options = list(dom = 'Bfrtip',   #for options, visit https://datatables.net/reference/option/dom
+                            buttons = list('colvis','copy', 'print', 
+                                           list(extend = 'collection',
+                                              buttons = c('csv', 'excel', 'pdf'),
+                                              text = 'Download')
+                                           ),
+                                      colReorder = list(realtime = FALSE)
+                            )
+              ) %>%  formatStyle("Year", target = "row", backgroundColor = '#014d64',
+                                    class = 'compact')     
+            })  #end output DataTable
   
   
   output$countryPlot <- renderPlot({
@@ -207,23 +211,22 @@ server <- function(input, output) {
       ungroup() %>%
       arrange(.,Total_Medals)
     
-    #---- begin filter for only Top # of Countries select ----#
-    
-    if(topX() != "-ALL-"){
+#---- begin filter for only Top # of Countries select ----#
+    if(input$topX != "-ALL-"){
       country_topX <- country_prep %>% 
         select(Country, Total_Medals) %>% 
         distinct() %>% 
         arrange(desc(Total_Medals)) %>% 
         select(Country) %>% 
         head(n=as.numeric(input$topX))    
-    }
+      }
     else{
       country_topX <- country_prep %>% 
         select(Country) %>% 
         distinct()  
-    }
+        }
     
-    #---- plotting medals by metal, for each country ----#      
+#---- plotting medals by metal, for each country ----#      
     country_plot <- country_prep %>% 
       filter(Country %in% unlist(country_topX))
     
