@@ -1,10 +1,3 @@
-#############################
-#   after 1 week of dev    
-#    I decided I needed
-#  more flexibility. This
-#  app is testing fluidRows
-#############################
-
 library(shiny)
 library(dplyr)
 library(ggplot2)
@@ -22,9 +15,9 @@ max_date <- max(df$Year)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(theme = shinytheme("slate"),
-                #ui <- fluidPage(theme = shinytheme("flatly"),
-                #ui <- fluidPage(theme = shinytheme("superhero"),
-                #ui <- fluidPage(theme = shinytheme("yeti"),
+#ui <- fluidPage(theme = shinytheme("flatly"),
+#ui <- fluidPage(theme = shinytheme("superhero"),
+#ui <- fluidPage(theme = shinytheme("yeti"),
                 
                 # Application title
                 titlePanel("Summer Olympic Medal Data"),
@@ -82,18 +75,15 @@ ui <- fluidPage(theme = shinytheme("slate"),
                       tabPanel("Table",   DT::dataTableOutput("Table")),
                       tabPanel("Medals by Country", 
                                fluidRow(
-#                                 column(4,div(style = "height:100px;background-color: #A8A8A8;", textOutput("medalStatus2"))),
                                  column(4),
                                  column(4,selectInput("topX",
                                                        label = "Show Top: ",
-                                                       choices = c("-ALL-","5","10","15","25","50"),
-#                                                       choices = c("5","10","15","25","50"),
-                                                       selected = "5",
+                                                       choices = c("-ALL-","5","10","25","50"),
+                                                       selected = '25',
                                                        multiple = FALSE,
                                                        width = NULL,
                                                        size = NULL)),
                                 column(4)
-#                                 column(4,div(style = "height:100px;background-color: #965A38;", textOutput("medalStatus3")))
                                ), #--- end fluid header row ---#
                                plotOutput("countryPlot"))
                     )
@@ -105,6 +95,11 @@ ui <- fluidPage(theme = shinytheme("slate"),
 ###########################################
 
 server <- function(input, output) {
+
+  topX <- reactive({
+    req(input$topX)
+    input$topX
+  })
   
   output$medalPlot <- renderPlot({
     
@@ -185,14 +180,14 @@ server <- function(input, output) {
     y2 <- input$year[2]
     medals_selected <- input$medal_select
     gender_selected <- input$gender_select
-    topX <- input$topX
-    
+      
     #-- pre-plot filtering to keep code clean --#
     df <- if(x != "-ALL-"){
       df %>% filter(Sport == x)
     } else{df}
+
     
-    country_plot <- df %>% 
+    country_prep <- df %>% 
       filter(Year >= y1 & Year <= y2) %>%
       filter(Medal %in% medals_selected) %>% 
       filter(Gender %in% gender_selected) %>%
@@ -213,22 +208,24 @@ server <- function(input, output) {
       arrange(.,Total_Medals)
 
 #---- begin filter for only Top # of Countries select ----#
-      country_topX <- if(input$topX != "-ALL-"){
-                        country_plot %>% 
-                        select(Country, Total_Medals) %>% 
-                        distinct() %>% 
-                        arrange(desc(Total_Medals)) %>% 
-                        select(Country) %>% 
-                        head(n=input$topX)        
-      }
-                      else{country_plot %>% 
-                          select(Country) %>% 
-                          distinct()  
-                      }
 
+      if(topX() != "-ALL-"){
+              country_topX <- country_prep %>% 
+              select(Country, Total_Medals) %>% 
+              distinct() %>% 
+              arrange(desc(Total_Medals)) %>% 
+              select(Country) %>% 
+              head(n=as.numeric(input$topX))    
+            }
+          else{
+              country_topX <- country_prep %>% 
+              select(Country) %>% 
+              distinct()  
+            }
+      
 #---- plotting medals by metal, for each country ----#      
-    country_plot <- country_plot %>% 
-        filter(Country %in% unlist(country_topX))
+    country_plot <- country_prep %>% 
+                  filter(Country %in% unlist(country_topX))
       
     ggplot(country_plot, aes(x = reorder(Country, -Total_Medals), y = n, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
       geom_bar(stat = 'identity') +
@@ -242,7 +239,8 @@ server <- function(input, output) {
       theme(axis.text.x = element_text(angle = 90, hjust = 0.95, vjust = 0.2))
     
   }) #-end country plot
-  
+
+
 } # end_server
 
 # Run the application 

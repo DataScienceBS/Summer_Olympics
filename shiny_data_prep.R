@@ -14,7 +14,7 @@ library(plotly)
 library(DT)
 library(shinythemes)
 library(ggthemes)
-
+library(readxl)
 
 ##------------------ data prep ------------------##
 
@@ -204,24 +204,36 @@ test <- df %>%
 #--- count medals for a Sport -> Discipline -> Event -> Medal level to avoid 
 #---- counting each athlete within a team event. (e.g. hockey, 4x100m relay)
 ###################################################################################         
-group_by(Year, Country, Sport, Discipline, Event, Gender, Medal) %>%
+  group_by(Year, Country, Sport, Discipline, Event, Medal) %>%
   distinct() %>%
   tally() %>%
   ungroup() %>%
   group_by(Country) %>%
-  mutate(Total_Medals = sum(n), sort = TRUE) %>%
+  mutate(Total_Medals = sum(n)) %>%
   ungroup() %>%
   arrange(.,Total_Medals)
 
+View(test)
 
 topX <- 15
 
-test_topX <- test %>% 
-  select(Country, Total_Medals) %>% 
-  distinct() %>% 
-  arrange(desc(Total_Medals)) %>% 
-  select(Country) %>% 
-  head(n=topX)        
+country_topX <- if(topX != "-ALL-"){
+  test %>% 
+    select(Country, Total_Medals) %>% 
+    distinct() %>% 
+    arrange(desc(Total_Medals)) %>% 
+    select(Country) %>% 
+    head(n=topX)    
+}  else{test %>% 
+    select(Country) %>% 
+    distinct()  
+}
+
+test <- test %>% 
+  filter(Country %in% unlist(country_topX))
+
+View(test)
+
 
 test2 <- test %>% 
   filter(Country %in% unlist(test_topX))
