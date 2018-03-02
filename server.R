@@ -2,6 +2,10 @@ library(shiny)
 library(dplyr)
 library(ggplot2)
 library(DT)
+library(ggvis)
+
+library(rsconnect)
+#rsconnect::deployApp('C:/Users/BS/NSS/Summer_Olympics')
 
 shinyServer(function(input, output) {
     
@@ -24,8 +28,8 @@ shinyServer(function(input, output) {
       }
     }) #end error handling for empty years
     
-    #-------- handling plot for sports ---------#
-    ##-------- IF to handle ALL or One  -------##
+#-------- handling plot for sports ---------#
+##-------- IF to handle ALL or one  -------##
     df <- if(x != "-ALL-"){
       df %>% filter(Sport == x)
     } else{df}
@@ -151,5 +155,28 @@ shinyServer(function(input, output) {
     
   }) #-end country plot
   
+  
+
+#store inputs for future use, passed from from ui.R
+  reactive({
+    x <- input$sport
+    y1 <- input$year[1]
+    y2 <- input$year[2]
+    medals_selected <- input$medal_select
+    gender_selected <- input$gender_select
+
+    scatter <- df %>%
+      filter(Year >= y1 & Year <= y2) %>%
+      filter(Medal %in% medals_selected) %>%
+      filter(Gender %in% gender_selected) %>%
+      select(Year, Country, Sport, Discipline, Event, Gender, Medal) %>%
+      group_by(Year, Country, Sport, Discipline, Event, Gender, Medal) %>%
+      summarize(total_cnt = n())
+
+    ggvis(scatter, x= ~Year, y = ~total_cnt, fill = "#6794a7") %>%
+      layer_points() %>%
+      add_axis("x", title = "Total Medals")
+    }) %>% bind_shiny("scatter", "scatter_ui")
+   #end reactive
   
 }) # end_server

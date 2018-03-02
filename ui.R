@@ -2,6 +2,7 @@ library(shiny)
 library(DT)
 library(shinythemes)
 library(ggthemes)
+library(ggvis)
 
 #shinyUI(fluidPage(theme = shinytheme("slate"),
 #shinyUI(fluidPage(theme = shinytheme("flatly"),
@@ -61,7 +62,15 @@ shinyUI(fluidPage(theme = shinytheme("superhero"),
                   mainPanel(
                     tabsetPanel(
                       tabPanel("Medals by Sport", textOutput("text"), plotOutput("medalPlot")),
-                      tabPanel("Table",   DT::dataTableOutput("Table")),
+                      tabPanel("Table",
+                               tags$head(tags$style(HTML("table.dataTable.hover tbody tr:hover, table.dataTable.display tbody tr:hover {
+                                  background-color: #01a2d9 !important;
+                                                         }
+                                                         "))),
+                               tags$style(HTML(".dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing,.dataTables_wrapper .dataTables_paginate .paginate_button, .dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+                                               color: #6794a7 !important;
+                                               }")),
+                               DT::dataTableOutput("Table")),
                       tabPanel("Medals by Country", 
                                fluidRow(
                                  column(4),
@@ -74,7 +83,9 @@ shinyUI(fluidPage(theme = shinytheme("superhero"),
                                                       size = NULL)),
                                  column(4)
                                ), #--- end fluid header row ---#
-                               plotOutput("countryPlot"))
+                               plotOutput("countryPlot")),
+                      tabPanel("Test ggvis Scatter", uiOutput("scatter_ui"),
+                               ggvisOutput("scatter"))  #for future dev https://github.com/rstudio/ggvis/issues/233
                     )
                   )
                 )
