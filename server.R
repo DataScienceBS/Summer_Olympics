@@ -4,20 +4,22 @@ library(ggplot2)
 library(DT)
 library(ggvis)
 
-#rsconnect::deployApp('C:/Users/BS/NSS/Summer_Olympics')
-
 shinyServer(function(input, output) {
-    
+
+##################################
+#     BEGIN: Medal Plot Tab      #
+##################################
+  
   output$medalPlot <- renderPlot({
     
-    # store inputs for future use, passed from from ui.R
+#-- store inputs for future use, passed from from ui.R
     x <- input$sport
     y1 <- input$year[1]
     y2 <- input$year[2]
     medals_selected <- input$medal_select
     gender_selected <- input$gender_select
     
-    #---- Error Handling for missing Olympic data in 1916, 1940 and 1944 ----#
+#---- Error Handling for missing Olympic data in 1916, 1940 and 1944 ----#
     output$text <- renderText({
       if (y1 >= 1940 & y2 <= 1944) {
         print(paste0("You selected years ", y1, " and ", y2,".  Due to World War II, no Olympic games were held during this period."))
@@ -49,9 +51,10 @@ shinyServer(function(input, output) {
       theme(axis.text.x = element_text(angle = 45, hjust = 0)) +
       scale_fill_economist()
   }) #end output medal_plot
-  
-  
-  #------- handling table data as second tab -------#
+
+##################################
+#     BEGIN: Data Table Tab      #
+##################################
   
   output$Table <- DT::renderDT({
     x <- input$sport
@@ -60,7 +63,7 @@ shinyServer(function(input, output) {
     medals_selected <- input$medal_select
     gender_selected <- input$gender_select
     
-    #-- pre-plot filtering to keep code clean --#
+#-- pre-plot filtering to keep code clean --#
     df <- if(x != "-ALL-"){
       df %>% filter(Sport == x)
     } else{df}
@@ -71,7 +74,7 @@ shinyServer(function(input, output) {
       filter(Gender %in% gender_selected) %>%
       select(Location, Year, Country, Sport, Discipline, Event, Gender, Athlete, Medal)
     
-    #----- creating and formatting the data table ----#    
+#----- creating and formatting the data table ----#    
     datatable(tbl1,
               extensions = c('ColReorder', 'Buttons'), 
               options = list(dom = 'Bfrtip',   #for options, visit https://datatables.net/reference/option/dom
@@ -86,17 +89,21 @@ shinyServer(function(input, output) {
                        class = 'compact')     
   })  #end output DataTable
   
+##################################
+#    BEGIN: Country Plot Tab     #
+##################################
+  
   
   output$countryPlot <- renderPlot({
     
-    # store inputs for future use, passed from from ui.R
+#-- store inputs for future use, passed from from ui.R
     x <- input$sport
     y1 <- input$year[1]
     y2 <- input$year[2]
     medals_selected <- input$medal_select
     gender_selected <- input$gender_select
     
-    #-- pre-plot filtering to keep code clean --#
+#-- pre-plot filtering to keep code clean --#
     df <- if(x != "-ALL-"){
       df %>% filter(Sport == x)
     } else{df}
@@ -122,7 +129,7 @@ shinyServer(function(input, output) {
       ungroup() %>%
       arrange(.,Total_Medals)
     
-    #---- begin filter for only Top # of Countries select ----#
+#---- begin filter for only Top # of Countries select ----#
     if(input$topX != "-ALL-"){
       country_topX <- country_prep %>% 
         select(Country, Total_Medals) %>% 
@@ -137,22 +144,26 @@ shinyServer(function(input, output) {
         distinct()  
     }
     
-    #---- plotting medals by metal, for each country ----#      
+#---- plotting medals by metal, for each country ----#      
     country_plot <- country_prep %>% 
       filter(Country %in% unlist(country_topX))
     
     ggplot(country_plot, aes(x = reorder(Country, -Total_Medals), y = n, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
       geom_bar(stat = 'identity') +
       scale_fill_manual(name = "Medals", 
-                        values = c("Gold" = "#F16C20",
-                                   "Silver" = "#1395BA",
-                                   "Bronze" = "#0D3C55")) +
+                        values = c("Gold" = "#F9C527", #orange F16C20
+                                   "Silver" = "#CCCCCC", #blue 1395BA
+                                   "Bronze" = "#C4542F")) + #dark blue 0D3C55
       ylab('Medal Count') +
       xlab('Country') +
       theme_economist() +
       theme(axis.text.x = element_text(angle = 90, hjust = 0.95, vjust = 0.2))
     
   }) #-end country plot
+  
+##################################
+#      BEGIN: Reference Tab      #
+##################################
   
   output$ref <- renderUI({
     HTML(paste(h3("Sources used for this data project:"),
@@ -169,7 +180,6 @@ shinyServer(function(input, output) {
       br(),
       tags$a(href = "http://nashvillesoftwareschool.com", "Nashville Software School")
       ))
-    
-  })
+    })
   
 }) # end_server

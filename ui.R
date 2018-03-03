@@ -58,6 +58,7 @@ shinyUI(fluidPage(theme = shinytheme("superhero"),
                                 max = max_date,
                                 sep = "",
                                 step = 4,
+                                ticks = FALSE,
                                 value = c(min_date, max_date))
                   , width = 3),  #--end sidebar panel
                   
