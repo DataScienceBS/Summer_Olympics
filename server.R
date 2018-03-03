@@ -4,7 +4,6 @@ library(ggplot2)
 library(DT)
 library(ggvis)
 
-library(rsconnect)
 #rsconnect::deployApp('C:/Users/BS/NSS/Summer_Olympics')
 
 shinyServer(function(input, output) {
@@ -108,7 +107,7 @@ shinyServer(function(input, output) {
       filter(Medal %in% medals_selected) %>% 
       filter(Gender %in% gender_selected) %>%
       select(Year, Country, Sport, Discipline, Event, Medal) %>%
-      ###################################################################################
+    ###################################################################################
     #- calculating Medal Count by metal to display medals stacked for each country
     #-- since the data has athlete level detail, I use Group By and Distinct to 
     #--- count medals for a Sport -> Discipline -> Event -> Medal level to avoid 
@@ -144,10 +143,10 @@ shinyServer(function(input, output) {
     
     ggplot(country_plot, aes(x = reorder(Country, -Total_Medals), y = n, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
       geom_bar(stat = 'identity') +
-      scale_fill_manual(name = "Medals",
-                        values = c("Gold" = "#C98910",
-                                   "Silver" = "#A8A8A8",
-                                   "Bronze" = "#965A38")) +
+      scale_fill_manual(name = "Medals", 
+                        values = c("Gold" = "#F16C20",
+                                   "Silver" = "#1395BA",
+                                   "Bronze" = "#0D3C55")) +
       ylab('Medal Count') +
       xlab('Country') +
       theme_economist() +
@@ -155,28 +154,22 @@ shinyServer(function(input, output) {
     
   }) #-end country plot
   
-  
-
-#store inputs for future use, passed from from ui.R
-  reactive({
-    x <- input$sport
-    y1 <- input$year[1]
-    y2 <- input$year[2]
-    medals_selected <- input$medal_select
-    gender_selected <- input$gender_select
-
-    scatter <- df %>%
-      filter(Year >= y1 & Year <= y2) %>%
-      filter(Medal %in% medals_selected) %>%
-      filter(Gender %in% gender_selected) %>%
-      select(Year, Country, Sport, Discipline, Event, Gender, Medal) %>%
-      group_by(Year, Country, Sport, Discipline, Event, Gender, Medal) %>%
-      summarize(total_cnt = n())
-
-    ggvis(scatter, x= ~Year, y = ~total_cnt, fill = "#6794a7") %>%
-      layer_points() %>%
-      add_axis("x", title = "Total Medals")
-    }) %>% bind_shiny("scatter", "scatter_ui")
-   #end reactive
+  output$ref <- renderUI({
+    HTML(paste(h3("Sources used for this data project:"),
+      tags$a(href = "https://www.theguardian.com/sport/datablog/2012/jun/25/olympic-medal-winner-list-data", "The Guardian, Olympic medal winners: every one since 1896 as open data"),
+      br(),
+      tags$a(href = "https://html-color-codes.info/colors-from-image/", "Select hex color from images"),
+      br(),br(),
+      h4("Special Thanks to ", a(href = "https://stackoverflow.com/questions/tagged/shiny", "Stackoverflow"), " and ", a(href = "https://www.DataCamp.com", "DataCamp")),
+      hr(),
+      h3("Other Information:"),
+      tags$a(href = "https://www.github.com/DataScienceBS", "DataScienceBS Github Account"),
+      br(),
+      tags$a(href = "https://www.linkedin.com/in/BSanders21", "Brandon Sanders LinkedIn"),
+      br(),
+      tags$a(href = "http://nashvillesoftwareschool.com", "Nashville Software School")
+      ))
+    
+  })
   
 }) # end_server

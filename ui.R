@@ -4,13 +4,17 @@ library(shinythemes)
 library(ggthemes)
 library(ggvis)
 
-#shinyUI(fluidPage(theme = shinytheme("slate"),
-#shinyUI(fluidPage(theme = shinytheme("flatly"),
 shinyUI(fluidPage(theme = shinytheme("superhero"),
-#shinyUI(fluidPage(theme = shinytheme("yeti"),
-                
-                # Application title
-                titlePanel("Summer Olympic Medal Data"),
+
+          # Application title
+                titlePanel(
+                  fluidRow(
+                    column(1,HTML("<img src='transparent_rings.png', width = 100, style='background-color:transparent, border:0px, box-shadow:none'>")),
+                    column(10,
+                           HTML("<p align=center>Exploring Summer Olympic Data, 1896 - 2008</p><br/>")),
+                    column(1)
+                          ),
+                  windowTitle = "Summer Olympics"),
                 
                 # Sidebar with a slider input for number of bins 
                 sidebarLayout(
@@ -39,8 +43,8 @@ shinyUI(fluidPage(theme = shinytheme("superhero"),
                       
                       #---------- only show this panel if not reviewing ALL sports (input$sport) ----------#
                       ### for visualization purposes, we will not show all disciplines across all sports ###
-                      column(5,
-                             conditionalPanel(
+                      column(4,
+                               conditionalPanel(
                                condition = "input.sport != '-ALL-'",
                                radioButtons(inputId = "gender_or_dis", 
                                             label = "Group By: ", 
@@ -55,7 +59,7 @@ shinyUI(fluidPage(theme = shinytheme("superhero"),
                                 sep = "",
                                 step = 4,
                                 value = c(min_date, max_date))
-                  ),  #--end sidebar panel
+                  , width = 3),  #--end sidebar panel
                   
                   
                   # Show plots of the selected inputs
@@ -84,9 +88,7 @@ shinyUI(fluidPage(theme = shinytheme("superhero"),
                                  column(4)
                                ), #--- end fluid header row ---#
                                plotOutput("countryPlot")),
-                      tabPanel("Test ggvis Scatter", uiOutput("scatter_ui"),
-                               ggvisOutput("scatter"))  #for future dev https://github.com/rstudio/ggvis/issues/233
-                    )
-                  )
+                      tabPanel("Reference", htmlOutput("ref"))                    )
+                  ,width = 9)
                 )
 ))
