@@ -18,7 +18,13 @@ shinyServer(function(input, output) {
     y2 <- input$year[2]
     medals_selected <- input$medal_select
     gender_selected <- input$gender_select
-    
+    gen_dis <- if(x != "-ALL-"){
+      input$gender_or_dis
+    }    else{
+      "Gender"
+    }
+      
+      
 #---- Error Handling for missing Olympic data in 1916, 1940 and 1944 ----#
     output$text <- renderText({
       if (y1 >= 1940 & y2 <= 1944) {
@@ -31,25 +37,29 @@ shinyServer(function(input, output) {
     
 #-------- handling plot for sports ---------#
 ##-------- IF to handle ALL or one  -------##
-    df <- if(x != "-ALL-"){
+    df_m <- if(x != "-ALL-"){
       df %>% filter(Sport == x)
-    } else{df}
+    } else{
+      df
+      }
     
-    df %>% 
+    medals <- df_m %>% 
       filter(Year >= y1 & Year <= y2) %>%
       filter(Medal %in% medals_selected) %>% 
       filter(Gender %in% gender_selected) %>%
       select(Year, Country, Discipline, Event, Gender, Medal) %>% 
       group_by(Year, Country, Discipline, Event, Gender, Medal) %>%
       distinct() %>%
-      tally() %>% 
-      ggplot(., aes(x = as.factor(Year))) +
-      geom_bar(aes_string(fill = input$gender_or_dis),position = position_stack(reverse = TRUE)) +
+      tally()
+
+    ggplot(data = medals, aes(x = as.factor(Year))) +
+      geom_bar(aes_string(fill = gen_dis),position = position_stack(reverse = TRUE)) +
       ylab('Medal Count') + 
       xlab('Year') +
       theme_economist() + 
       theme(axis.text.x = element_text(angle = 45, hjust = 0)) +
       scale_fill_economist()
+    
   }) #end output medal_plot
 
 ##################################
@@ -64,11 +74,13 @@ shinyServer(function(input, output) {
     gender_selected <- input$gender_select
     
 #-- pre-plot filtering to keep code clean --#
-    df <- if(x != "-ALL-"){
+    df_t <- if(x != "-ALL-"){
       df %>% filter(Sport == x)
-    } else{df}
+    } else{
+      df
+      }
     
-    tbl1 <- df %>% 
+    tbl1 <- df_t %>% 
       filter(Year >= y1 & Year <= y2) %>%
       filter(Medal %in% medals_selected) %>%
       filter(Gender %in% gender_selected) %>%
@@ -104,12 +116,14 @@ shinyServer(function(input, output) {
     gender_selected <- input$gender_select
     
 #-- pre-plot filtering to keep code clean --#
-    df <- if(x != "-ALL-"){
+    df_c <- if(x != "-ALL-"){
       df %>% filter(Sport == x)
-    } else{df}
+    } else{
+      df
+      }
     
     
-    country_prep <- df %>% 
+    country_prep <- df_c %>% 
       filter(Year >= y1 & Year <= y2) %>%
       filter(Medal %in% medals_selected) %>% 
       filter(Gender %in% gender_selected) %>%
@@ -156,8 +170,22 @@ shinyServer(function(input, output) {
                                    "Bronze" = "#C4542F")) + #dark blue 0D3C55
       ylab('Medal Count') +
       xlab('Country') +
-      theme_economist() +
-      theme(axis.text.x = element_text(angle = 90, hjust = 0.95, vjust = 0.2))
+#      theme_economist() +
+      theme(panel.background = element_rect("#4e5d6c"), panel.grid.major.x = element_blank()) +  #grid background blue and rm vert gridlines 
+      #theme(plot.border = element_rect("#1395BA")) + 
+      theme(plot.background = element_rect("#2b3e50")) +
+
+      theme(legend.background = element_rect("#2b3e50")) +
+      theme(legend.text = element_text(color = "white")) +
+      theme(legend.title = element_text(color = "white")) +
+      
+      theme(axis.text.x = element_text(angle = 90, hjust = 0.95, vjust = 0.2, color = "white")) +
+      theme(axis.text.y = element_text(color = "white")) +
+      theme(axis.title.x = element_text(color = "white")) +
+      theme(axis.title.y = element_text(color = "white"))
+      
+
+        
     
   }) #-end country plot
   
