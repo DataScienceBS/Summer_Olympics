@@ -2,13 +2,14 @@ library(shiny)
 library(dplyr)
 library(ggplot2)
 library(DT)
-library(ggvis)
 
 shinyServer(function(input, output) {
 
-##################################
-#     BEGIN: Medal Plot Tab      #
-##################################
+                      ########################################
+                      ########                       #########
+                      #######  BEGIN: Medal Plot Tab  ########
+                      ########                       #########
+                      ########################################
   
   output$medalPlot <- renderPlot({
     
@@ -18,6 +19,13 @@ shinyServer(function(input, output) {
     y2 <- input$year[2]
     medals_selected <- input$medal_select
     gender_selected <- input$gender_select
+
+###############################################################
+### gen_dis created to handle problems experienced between 
+### Country/Medal plots when returning to "-ALL-" selection
+### in Country tab then switching to Medal Plot. Likely due
+### to Gender being the only option for fill when ALL selected
+###############################################################
     gen_dis <- if(x != "-ALL-"){
       input$gender_or_dis
     }    else{
@@ -33,10 +41,9 @@ shinyServer(function(input, output) {
       else if (y1 == 1916 & y2 == 1916){
         print(paste0("You selected only ", y1, ".  Due to World War I, no Olympic games were held during this period."))
       }
-    }) #end error handling for empty years
+    })  
     
-#-------- handling plot for sports ---------#
-##-------- IF to handle ALL or one  -------##
+##------ handling plot for sports to handle ALL or one ------##
     df_m <- if(x != "-ALL-"){
       df %>% filter(Sport == x)
     } else{
@@ -60,11 +67,13 @@ shinyServer(function(input, output) {
       theme(axis.text.x = element_text(angle = 45, hjust = 0)) +
       scale_fill_economist()
     
-  }) #end output medal_plot
+  }) #-end output medal_plot
 
-##################################
-#     BEGIN: Data Table Tab      #
-##################################
+                      ########################################
+                      ########                       #########
+                      #######  BEGIN: Data Table Tab  ########
+                      ########                       #########
+                      ########################################
   
   output$Table <- DT::renderDT({
     x <- input$sport
@@ -96,15 +105,18 @@ shinyServer(function(input, output) {
                                                  text = 'Download')
                              ),
                              colReorder = list(realtime = FALSE)
-              )
-    ) %>%  formatStyle("Year", target = "row", backgroundColor = '#014d64',
-                       class = 'compact')     
-  })  #end output DataTable
+              ),
+              rownames = FALSE) %>%  #end DT and start pipe for format
+               formatStyle("Year", target = "row", backgroundColor = '#014d64',
+                       class = 'compact')
+  })  #-end output DataTable
   
-##################################
-#    BEGIN: Country Plot Tab     #
-##################################
-  
+
+                      ########################################
+                      ########                        ########
+                      #######  BEGIN: Country Plot Tab  ######
+                      ########                         #######
+                      ########################################  
   
   output$countryPlot <- renderPlot({
     
@@ -127,14 +139,14 @@ shinyServer(function(input, output) {
       filter(Year >= y1 & Year <= y2) %>%
       filter(Medal %in% medals_selected) %>% 
       filter(Gender %in% gender_selected) %>%
-      select(Year, Country, Sport, Discipline, Event, Medal) %>%
+      select(Year, Country, Sport, Discipline, Event, Medal, Gender) %>%
     ###################################################################################
-    #- calculating Medal Count by metal to display medals stacked for each country
-    #-- since the data has athlete level detail, I use Group By and Distinct to 
+    #- calculating Medal Count by metal to display medals stacked for each country.
+    #-- Since the data has athlete level detail, I use Group By and Distinct to 
     #--- count medals for a Sport -> Discipline -> Event -> Medal level to avoid 
     #---- counting each athlete within a team event. (e.g. hockey, 4x100m relay)
     ###################################################################################         
-    group_by(Year, Country, Sport, Discipline, Event, Medal) %>%
+    group_by(Year, Country, Sport, Discipline, Event, Medal, Gender) %>%
       distinct() %>%
       tally() %>%
       ungroup() %>%
@@ -165,17 +177,16 @@ shinyServer(function(input, output) {
     ggplot(country_plot, aes(x = reorder(Country, -Total_Medals), y = n, fill = factor(Medal, levels = c("Gold", "Silver", "Bronze")))) +
       geom_bar(stat = 'identity') +
       scale_fill_manual(name = "Medals", 
-                        values = c("Gold" = "#F9C527", #orange F16C20
-                                   "Silver" = "#CCCCCC", #blue 1395BA
-                                   "Bronze" = "#C4542F")) + #dark blue 0D3C55
+                        values = c("Gold" = "#F9C527", 
+                                   "Silver" = "#CCCCCC",     # assigning hex colors to 
+                                   "Bronze" = "#C4542F")) +  # fill of factors in Medal field
       ylab('Medal Count') +
       xlab('Country') +
-#      theme_economist() +
-      theme(panel.background = element_rect("#4e5d6c"), panel.grid.major.x = element_blank()) +  #grid background blue and rm vert gridlines 
-      #theme(plot.border = element_rect("#1395BA")) + 
-      theme(plot.background = element_rect("#2b3e50")) +
+      theme(panel.background = element_rect("#4e5d6c"),      # grid background blue to compliment theme
+            panel.grid.major.x = element_blank()) +          # removed vert gridlines 
+      theme(plot.background = element_rect("#2b3e50")) +     # plot background to match page
 
-      theme(legend.background = element_rect("#2b3e50")) +
+      theme(legend.background = element_rect("#2b3e50")) +   # legend BG to match plot
       theme(legend.text = element_text(color = "white")) +
       theme(legend.title = element_text(color = "white")) +
       
@@ -183,15 +194,14 @@ shinyServer(function(input, output) {
       theme(axis.text.y = element_text(color = "white")) +
       theme(axis.title.x = element_text(color = "white")) +
       theme(axis.title.y = element_text(color = "white"))
-      
-
-        
     
   }) #-end country plot
   
-##################################
-#      BEGIN: Reference Tab      #
-##################################
+                      ########################################
+                      #########                      #########
+                      ########  BEGIN: Reference Tab  ########
+                      #########                      #########
+                      ########################################
   
   output$ref <- renderUI({
     HTML(paste(h3("Sources used for this data project:"),
@@ -208,6 +218,6 @@ shinyServer(function(input, output) {
       br(),
       tags$a(href = "http://nashvillesoftwareschool.com", "Nashville Software School")
       ))
-    })
+    }) #-end reference tab output
   
 }) # end_server

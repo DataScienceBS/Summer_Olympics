@@ -5,9 +5,9 @@ account: datasciencebs
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 291103
-bundleId: 1262013
+bundleId: 1263730
 url: https://datasciencebs.shinyapps.io/summer_olympics/
-when: 1520651622.50188
+when: 1520817081.43758
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: ~$oject_proposal.docx|app_backup.R|app_finished.R|project_proposal.docx

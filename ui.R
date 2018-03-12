@@ -2,7 +2,6 @@ library(shiny)
 library(DT)
 library(shinythemes)
 library(ggthemes)
-library(ggvis)
 
 shinyUI(fluidPage(theme = shinytheme("superhero"),
 
@@ -63,10 +62,12 @@ shinyUI(fluidPage(theme = shinytheme("superhero"),
                   , width = 3),  #--end sidebar panel
                   
                   
-                  # Show plots of the selected inputs
+                  # Show plots of the selected inputs in separate tabs
                   mainPanel(
                     tabsetPanel(
                       tabPanel("Medals by Sport", textOutput("text"), plotOutput("medalPlot")),
+                      
+                      #-- HTML style tags added to control table colors for enhanced visibility --#
                       tabPanel("Table",
                                tags$head(tags$style(HTML("table.dataTable.hover tbody tr:hover, table.dataTable.display tbody tr:hover {
                                   background-color: #01a2d9 !important;
@@ -78,15 +79,15 @@ shinyUI(fluidPage(theme = shinytheme("superhero"),
                                DT::dataTableOutput("Table")),
                       tabPanel("Medals by Country", 
                                fluidRow(
-                                 column(4),
-                                 column(4,selectInput("topX",
-                                                      label = "Show Top: ",
+                                 column(5),
+                                 column(2,selectInput("topX",
+                                                      label = "Countries to display: ",
                                                       choices = c("-ALL-","5","10","25","50"),
                                                       selected = '-ALL-',
                                                       multiple = FALSE,
                                                       width = NULL,
                                                       size = NULL)),
-                                 column(4)
+                                 column(5)
                                ), #--- end fluid header row ---#
                                plotOutput("countryPlot")),
                       tabPanel("Reference", htmlOutput("ref"))                    )
